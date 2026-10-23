@@ -1,0 +1,736 @@
+##############################################################################
+# HSN THERMAL MASTER CONTROLLER
+# POLAR TEC ENGINE
+# COLD-COLD • HEAT • COOL • DELTA-T CONTROL
+##############################################################################
+
+Author: User Project
+Framework: HSN Quant Engine
+Revision: Master Reference Edition
+
+##############################################################################
+# LICENSE
+##############################################################################
+
+Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International
+
+CC BY-NC-ND 4.0
+
+You are free to:
+
+    Share — copy and redistribute the material in any medium or format
+
+Under the following terms:
+
+    Attribution —
+        Appropriate credit must be given.
+
+    NonCommercial —
+        The material may not be used for commercial purposes.
+
+    NoDerivatives —
+        If you remix, transform, or build upon the material,
+        you may not distribute the modified material.
+
+License Summary:
+    https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+Provided AS-IS without warranty.
+
+##############################################################################
+# TEC REFERENCE MODULE
+##############################################################################
+
+Module:
+
+    Same Sky CP60340 TEC
+
+Specifications:
+
+    Imax      = 6.0 A
+    Vmax      = 8.6 V
+    R         = 1.21 ohm
+    Qmax      = 29 W
+    ΔTmax     = 68 C
+    Size      = 30 x 30 x 4 mm
+
+Derived HSN Parameters:
+
+    α = 0.0197059 V/K
+
+    K = 0.08336 W/K
+
+
+##############################################################################
+# HSN POLAR CONCEPT
+##############################################################################
+
+A TEC moves heat from one face to the other.
+
+Forward Current:
+
+         HOT
+          ^
+          |
+       [ TEC ]
+          |
+          v
+        COLD
+
+Reverse Current:
+
+        COLD
+          ^
+          |
+       [ TEC ]
+          |
+          v
+         HOT
+
+The knob determines:
+
+    Direction of heat flow
+    Amount of heat flow
+    Temperature separation
+
+##############################################################################
+# MASTER FRONT PANEL
+##############################################################################
+
+     +----------------------------------------------------+
+     |                                                    |
+     |              HSN THERMAL MASTER                    |
+     |                                                    |
+     |                                                    |
+     | POLAR                      DELTA-T                 |
+     |                                                    |
+     | HEAT O----/\/\/\/\/----O COOL   LOW O----O HIGH   |
+     |                                                    |
+     |                                                    |
+     | Tc = -12.4 C                                      |
+     | Th = +43.8 C                                      |
+     | I  =  3.4 A                                       |
+     | V  =  5.9 V                                       |
+     |                                                    |
+     +----------------------------------------------------+
+
+Knob 1:
+
+    Direction
+
+         HEAT <-----> COOL
+
+Knob 2:
+
+         LOW ΔT <-----> HIGH ΔT
+
+
+##############################################################################
+# POTENTIOMETER CONTROL WIRING
+##############################################################################
+
+                     +5V
+                      |
+                      |
+                   [10K]
+                      |
+                      +----------> POLAR SIGNAL
+                      |
+                   [10K]
+                      |
+                     GND
+
+
+ADC READING
+
+0 ---------------------------- 1023
+
+|                               |
+Heat                        Cool
+
+
+Normalized Polar Value
+
+P = (ADC - 512)/512
+
+
+Range
+
+-1.0 <= P <= +1.0
+
+
+P = -1.0
+
+Maximum Heating
+
+
+P = 0
+
+Neutral
+
+
+P = +1.0
+
+Maximum Cooling
+
+
+##############################################################################
+# DELTA-T POT WIRING
+##############################################################################
+
+                     +5V
+                      |
+                      |
+                   [10K]
+                      |
+                      +----------> DT SIGNAL
+                      |
+                   [10K]
+                      |
+                     GND
+
+
+Delta-T Command
+
+D = ADC2 / 1023
+
+Range
+
+0.0 <= D <= 1.0
+
+
+D = 0
+
+Minimum Separation
+
+
+D = 1
+
+Maximum Separation
+
+
+##############################################################################
+# MASTER ELECTRICAL SCHEMATIC
+##############################################################################
+
+                      +12V OR +24V
+                             |
+                           FUSE
+                             |
+                     +---------------+
+                     | H-BRIDGE TEC  |
+                     | DRIVER        |
+                     +---------------+
+                         |       |
+                         |       |
+                         +---+---+
+                             |
+                           TEC
+                             |
+                            GND
+
+
+              +5V
+               |
+            POLAR POT
+               |
+               +--------> MCU ADC #1
+               |
+              GND
+
+
+              +5V
+               |
+           DELTA-T POT
+               |
+               +--------> MCU ADC #2
+               |
+              GND
+
+
+             Tc SENSOR
+                 |
+                 +--------> MCU AD
+
+
+             Th SENSOR
+                 |
+                 +--------> MCU AD
+
+
+##############################################################################
+# SINGLE TEC THERMAL SCHEMATIC
+##############################################################################
+
+                 Tc SENSOR
+                     |
+                     V
+
+       +---------------------------+
+       | CONTROLLED PLATE          |
+       +---------------------------+
+                     |
+              COLD FACE
+       +---------------------------+
+       |          TEC              |
+       +---------------------------+
+               HOT FACE
+                     |
+       +---------------------------+
+       | HEATSINK                  |
+       +---------------------------+
+                     |
+                 Th SENSOR
+
+
+##############################################################################
+# COLD-COLD CASCADE THERMAL SCHEMATIC
+##############################################################################
+
+                    Tc SENSOR
+                        |
+                        V
+
+               +----------------+
+               | FINAL PLATE     |
+               +----------------+
+                        |
+                COLD FACE TEC1
+
+             +--------------------+
+             | TEC1 CP60340       |
+             +--------------------+
+
+                 HOT FACE TEC1
+                        |
+                        V
+
+              +------------------+
+              | INTERSTAGE PLATE |
+              +------------------+
+                        |
+                 COLD FACE TEC2
+
+             +--------------------+
+             | TEC2 CP60340       |
+             +--------------------+
+
+                 HOT FACE TEC2
+                        |
+                        V
+
+                +---------------+
+                | WATERBLOCK    |
+                +---------------+
+                        |
+                      PUMP
+                        |
+                   RADIATOR
+                        |
+                     AMBIENT
+
+
+##############################################################################
+# TEC EQUATIONS
+##############################################################################
+
+Cold Side Heat
+
+Qc = αITc
+     - (1/2)I²R
+     - K(Th - Tc)
+
+
+TEC Voltage
+
+V = α(Th - Tc)
+    + IR
+
+
+Electrical Power
+
+Pe = VI
+
+
+Hot Side Heat
+
+Qh = Qc + VI
+
+
+##############################################################################
+# HSN POLAR EQUATION
+##############################################################################
+
+P = Polar Command
+
+Range
+
+-1 <= P <= +1
+
+
+Current Direction
+
+I = P × Imax
+
+
+Examples
+
+P = -1.0
+
+Maximum Heat
+
+
+P = -0.50
+
+Medium Heat
+
+
+P = 0
+
+Neutral
+
+
+P = +0.50
+
+Medium Cool
+
+
+P = +1.0
+
+Maximum Cool
+
+
+##############################################################################
+# HSN DELTA-T EQUATION
+##############################################################################
+
+D = Delta-T Command
+
+Range
+
+0 <= D <= 1
+
+
+Current Magnitude
+
+Imag = D × Imax
+
+
+Examples
+
+D = 0
+
+No Temperature Difference
+
+
+D = 0.50
+
+Half Difference
+
+
+D = 1.00
+
+Maximum Difference
+
+
+##############################################################################
+# COMBINED POLAR + DELTA-T EQUATION
+##############################################################################
+
+Actual Current
+
+Iactual = P × D × Imax
+
+
+Examples
+
+P = +1
+D = 1
+
+Maximum Cooling
+
+
+P = +1
+D = 0.25
+
+Small Cooling
+
+
+P = -1
+D = 1
+
+Maximum Heating
+
+
+P = -1
+D = 0.25
+
+Small Heating
+
+
+##############################################################################
+# POLAR TEMPERATURE MODEL
+##############################################################################
+
+Reference Values
+
+Ambient    = 27 C
+
+Cold Limit = -35 C
+
+Hot Limit  = +75 C
+
+
+Cold Target
+
+Tc_target
+
+= Ta - P×D×(Ta - Tcold)
+
+
+Hot Target
+
+Th_target
+
+= Ta + P×D×(Thot - Ta)
+
+
+##############################################################################
+# EXAMPLES
+##############################################################################
+
+Example A
+
+P = +1
+D = 1
+
+Result
+
+Tc = -35 C
+
+Th = +75 C
+
+
+--------------------------------------------------
+
+Example B
+
+P = +0.5
+D = 1
+
+Result
+
+Tc ≈ -4 C
+
+Th ≈ +51 C
+
+
+--------------------------------------------------
+
+Example C
+
+P = +1
+D = 0.25
+
+Result
+
+Tc ≈ +11.5 C
+
+Th ≈ +39 C
+
+
+--------------------------------------------------
+
+Example D
+
+P = 0
+D = Any
+
+Result
+
+Tc = Ambient
+
+Th = Ambient
+
+
+--------------------------------------------------
+
+Example E
+
+P = -1
+D = 1
+
+Result
+
+Polarity Reversed
+
+Original Cold Face
+
++75 C
+
+Original Hot Face
+
+-35 C
+
+
+##############################################################################
+# TEMPERATURE COMPRESSION MODE
+##############################################################################
+
+Purpose:
+
+    Make cold warmer
+
+    Make hot cooler
+
+Method:
+
+    Reduce Delta-T
+
+
+FULL ΔT
+
+    Hot  = 75 C
+
+    Cold = -35 C
+
+
+HALF ΔT
+
+    Hot  = 50 C
+
+    Cold = 0 C
+
+
+LOW ΔT
+
+    Hot  = 35 C
+
+    Cold = 20 C
+
+
+ZERO ΔT
+
+    Hot  = 27 C
+
+    Cold = 27 C
+
+
+##############################################################################
+# TWO-STAGE CASCADE EXAMPLE
+##############################################################################
+
+Assumptions
+
+Ambient
+
+Th = 27 C
+
+Load
+
+Qload = 2 W
+
+TEC1 Current
+
+I1 = 2.5 A
+
+TEC2 Current
+
+I2 = 5.5 A
+
+
+Results
+
+Tc = -45.69 C
+
+Tm = +19.38 C
+
+Th = +27.00 C
+
+TEC1 Power
+
+10.77 W
+
+TEC2 Power
+
+37.43 W
+
+Total Electrical
+
+48.20 W
+
+Radiator Heat
+
+50.20 W
+
+
+##############################################################################
+# HSN CONTROL ALGORITHM
+##############################################################################
+
+Read:
+
+    Polar Pot
+    Delta-T Pot
+    Tc Sensor
+    Th Sensor
+
+Calculate:
+
+    P
+    D
+
+Compute:
+
+    Iactual
+
+Drive:
+
+    H-Bridge
+
+Monitor:
+
+    Tc
+    Th
+    Current
+    Voltage
+
+Shutdown If:
+
+    Overcurrent
+    Overtemperature
+    Sensor Failure
+    Pump Failure
+    Fan Failure
+
+
+##############################################################################
+# SAFETY
+##############################################################################
+
+Use:
+
+    Fuse
+    Current Limiter
+    Thermal Shutdown
+    Temperature Sensors
+    Pump Monitoring
+    Fan Monitoring
+
+Cold Side Precautions
+
+    Condensation
+    Frost
+    Water Intrusion
+
+Hot Side Precautions
+
+    Burns
+    Heat Damage
+    TEC Overstress
+
+Never operate a TEC without adequate heatsinking.
+
+##############################################################################
+# END OF HSN MASTER THERMAL CONTROLLER REFERENCE
+##############################################################################
